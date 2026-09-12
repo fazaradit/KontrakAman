@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: kontrakaman-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - APP_ENV=${APP_ENV}
+    networks:
+      - kontrakaman-network
+    depends_on:
+      - db
+
+  db:
+    container_name: kontrakaman-db
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - kontrakaman-db-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - kontrakaman-network
+
+volumes:
+  kontrakaman-db-data:
+
+networks:
+  kontrakaman-network:
+    name: kontrakaman-network
