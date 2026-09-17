@@ -10,10 +10,11 @@ class EmbeddingClient {
             throw new EmbeddingException("API key Gemini tidak diset.");
         }
         
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent?key=' . $apiKey;
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=' . $apiKey;
         
         $data = [
-            'model' => 'models/embedding-001',
+            'model' => 'models/gemini-embedding-001',
+            'outputDimensionality' => 768,
             'content' => [
                 'parts' => [
                     ['text' => $text]
