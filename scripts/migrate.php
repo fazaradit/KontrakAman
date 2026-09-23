@@ -22,12 +22,28 @@ try {
     
     sort($files);
     
+    $pdo->exec("CREATE TABLE IF NOT EXISTS schema_migrations (
+        migration VARCHAR(255) PRIMARY KEY,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    
+    $stmt = $pdo->query("SELECT migration FROM schema_migrations");
+    $executed = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
     foreach ($files as $file) {
         $filename = basename($file);
+        
+        if (in_array($filename, $executed)) {
+            echo "- skipped: $filename (already migrated)\n";
+            continue;
+        }
+        
         $sql = file_get_contents($file);
         
         try {
             $pdo->exec($sql);
+            $stmt = $pdo->prepare("INSERT INTO schema_migrations (migration) VALUES (?)");
+            $stmt->execute([$filename]);
             echo "✓ migrated: $filename\n";
         } catch (PDOException $e) {
             die("Error migrating $filename: " . $e->getMessage() . "\n");

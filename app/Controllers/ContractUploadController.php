@@ -35,9 +35,21 @@ class ContractUploadController {
             return $response->json(['error' => 'Teks dokumen kosong setelah diekstrak.'], 422);
         }
         
+        $contractType = 'UNKNOWN';
+        $textForCheck = preg_replace('/waktu tidak tertentu/i', '', $text);
+        
+        $isPKWT = stripos($textForCheck, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
+        $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
+        
+        if ($isPKWT) {
+            $contractType = 'PKWT';
+        } elseif ($isPKWTT) {
+            $contractType = 'PKWTT';
+        }
+        
         $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, status) VALUES (?, ?, 'processing') RETURNING id");
-        $stmt->execute([$file['name'], $text]);
+        $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, contract_type, status) VALUES (?, ?, ?, 'processing') RETURNING id");
+        $stmt->execute([$file['name'], $text, $contractType]);
         $row = $stmt->fetch();
         
         // Untuk MVP, proses analysis dapat dilakukan secara terpisah (async/queue di production) 

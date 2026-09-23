@@ -35,9 +35,21 @@ class AgentToolEndpoint {
                     return $response->json(['error' => 'Teks dokumen kosong setelah diekstrak.'], 422);
                 }
                 
+                $contractType = 'UNKNOWN';
+                $textForCheck = preg_replace('/waktu tidak tertentu/i', '', $text);
+                
+                $isPKWT = stripos($textForCheck, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
+                $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
+                
+                if ($isPKWT) {
+                    $contractType = 'PKWT';
+                } elseif ($isPKWTT) {
+                    $contractType = 'PKWTT';
+                }
+                
                 $pdo = Database::getConnection();
-                $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, status) VALUES (?, ?, 'processing') RETURNING id");
-                $stmt->execute([$file['name'], $text]);
+                $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, contract_type, status) VALUES (?, ?, ?, 'processing') RETURNING id");
+                $stmt->execute([$file['name'], $text, $contractType]);
                 $contractId = $stmt->fetch()['id'];
             } else {
                 return $response->json(['error' => 'Harap berikan contract_id atau upload file kontrak (PDF).'], 400);

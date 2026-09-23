@@ -49,9 +49,15 @@ class AnalysisController {
         $pasalBlocks = $clauseSegmenter->extractPasalBlocks($normalizedText);
         
         $contractType = 'UNKNOWN';
-        if (stripos($normalizedText, 'waktu tertentu') !== false || stripos($normalizedText, 'pkwt') !== false) {
+        // Hapus 'waktu tidak tertentu' sementara untuk menghindari false positive pada 'waktu tertentu'
+        $textForCheck = preg_replace('/waktu tidak tertentu/i', '', $normalizedText);
+        
+        $isPKWT = stripos($textForCheck, 'waktu tertentu') !== false || stripos($normalizedText, 'pkwt') !== false;
+        $isPKWTT = stripos($normalizedText, 'waktu tidak tertentu') !== false || stripos($normalizedText, 'pkwtt') !== false;
+        
+        if ($isPKWT) {
             $contractType = 'PKWT';
-        } elseif (stripos($normalizedText, 'waktu tidak tertentu') !== false || stripos($normalizedText, 'pkwtt') !== false) {
+        } elseif ($isPKWTT) {
             $contractType = 'PKWTT';
         }
         

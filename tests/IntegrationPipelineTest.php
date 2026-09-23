@@ -24,7 +24,7 @@ class IntegrationPipelineTest extends TestCase {
         
         $endpoint = new AgentToolEndpoint();
         
-        $fixtureText = "PERJANJIAN KERJA WAKTU TERTENTU (PKWT)\n\n" . file_get_contents(__DIR__ . '/fixtures/fixture_1_format_standar.txt');
+        $fixtureText = file_get_contents(__DIR__ . '/fixtures/fixture_1_format_standar.txt');
         
         $pdo = \App\Config\Database::getConnection();
         $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, status) VALUES (?, ?, 'processing') RETURNING id");
