@@ -36,15 +36,16 @@ class ContractUploadController {
         }
         
         $contractType = 'UNKNOWN';
-        $textForCheck = preg_replace('/waktu tidak tertentu/i', '', $text);
         
-        $isPKWT = stripos($textForCheck, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
         $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
         
-        if ($isPKWT) {
-            $contractType = 'PKWT';
-        } elseif ($isPKWTT) {
+        if ($isPKWTT) {
             $contractType = 'PKWTT';
+        } else {
+            $isPKWT = stripos($text, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
+            if ($isPKWT) {
+                $contractType = 'PKWT';
+            }
         }
         
         $pdo = Database::getConnection();

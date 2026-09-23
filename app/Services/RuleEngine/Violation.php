@@ -7,6 +7,7 @@ class Violation {
     public string $category;
     public string $message;
     public string $source;
+    public ?int $clauseId = null;
 
     public function __construct(string $pasal, string $severity, string $category, string $message, string $source = 'rule_engine') {
         $this->pasal = $pasal;

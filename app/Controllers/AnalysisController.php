@@ -49,16 +49,17 @@ class AnalysisController {
         $pasalBlocks = $clauseSegmenter->extractPasalBlocks($normalizedText);
         
         $contractType = 'UNKNOWN';
-        // Hapus 'waktu tidak tertentu' sementara untuk menghindari false positive pada 'waktu tertentu'
-        $textForCheck = preg_replace('/waktu tidak tertentu/i', '', $normalizedText);
         
-        $isPKWT = stripos($textForCheck, 'waktu tertentu') !== false || stripos($normalizedText, 'pkwt') !== false;
         $isPKWTT = stripos($normalizedText, 'waktu tidak tertentu') !== false || stripos($normalizedText, 'pkwtt') !== false;
         
-        if ($isPKWT) {
-            $contractType = 'PKWT';
-        } elseif ($isPKWTT) {
+        if ($isPKWTT) {
             $contractType = 'PKWTT';
+        } else {
+            // Cek PKWT HANYA jika bukan PKWTT
+            $isPKWT = stripos($normalizedText, 'waktu tertentu') !== false || stripos($normalizedText, 'pkwt') !== false;
+            if ($isPKWT) {
+                $contractType = 'PKWT';
+            }
         }
         
         $pdo->prepare("UPDATE contracts SET contract_type = ? WHERE id = ?")->execute([$contractType, $contractId]);
@@ -126,14 +127,24 @@ class AnalysisController {
         foreach ($ruleViolations as $violation) {
             $processedCategories[] = $violation->category;
             
-            // Find clause number from category
+            // Find clause number from clauseId or fallback to category
             $clauseNumStr = "Umum / Tidak ditemukan klausul";
-            $clauseIdFound = null;
-            foreach ($allClauses as $c) {
-                if ($c['category'] === $violation->category) {
-                    $clauseNumStr = $c['clause_number'];
-                    $clauseIdFound = $c['id'];
-                    break;
+            $clauseIdFound = $violation->clauseId ?? null;
+            
+            if ($clauseIdFound) {
+                foreach ($allClauses as $c) {
+                    if ($c['id'] === $clauseIdFound) {
+                        $clauseNumStr = $c['clause_number'];
+                        break;
+                    }
+                }
+            } else {
+                foreach ($allClauses as $c) {
+                    if ($c['category'] === $violation->category) {
+                        $clauseNumStr = $c['clause_number'];
+                        $clauseIdFound = $c['id'];
+                        break;
+                    }
                 }
             }
             

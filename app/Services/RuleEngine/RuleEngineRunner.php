@@ -43,6 +43,7 @@ class RuleEngineRunner {
                 
                 $violation = $this->rules[$category]->evaluate($clause, $contractType);
                 if ($violation !== null) {
+                    $violation->clauseId = $clause['id'] ?? null;
                     $violations[] = $violation;
                 }
             }
