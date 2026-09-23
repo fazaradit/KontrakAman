@@ -8,6 +8,6 @@ class Gemini {
     }
 
     public static function getModel(): string {
-        return $_ENV['GEMINI_MODEL'] ?? getenv('GEMINI_MODEL') ?: 'gemini-1.5-pro';
+        return $_ENV['GEMINI_MODEL'] ?? getenv('GEMINI_MODEL') ?: 'gemini-1.5-flash';
     }
 }
