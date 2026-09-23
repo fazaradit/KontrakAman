@@ -8,12 +8,14 @@ class LemburRule implements RuleInterface {
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'lembur') {
             $jamPerHari = $clause['extracted_values']['jam_per_hari'] ?? null;
-            if ($jamPerHari !== null && $jamPerHari > 3) { 
+            $jamPerMinggu = $clause['extracted_values']['jam_per_minggu'] ?? null;
+            
+            if (($jamPerHari !== null && $jamPerHari > 4) || ($jamPerMinggu !== null && $jamPerMinggu > 18)) { 
                 return new Violation(
-                    "Kepmenaker No. 102/MEN/VI/2004",
+                    "Pasal 26 PP 35/2021",
                     "medium",
                     $clause['category'],
-                    "Waktu lembur maksimal 3 jam sehari menurut Kepmenaker lama."
+                    "Waktu lembur maksimal 4 jam/hari dan 18 jam/minggu menurut PP 35/2021."
                 );
             }
         }

@@ -27,10 +27,15 @@ class ValueExtractor {
                 break;
                 
             case 'lembur':
-                if (preg_match('/(\d+)\s*(?:\([a-z]+\)\s*)?jam/', $text, $matches)) {
+                $result['jam_per_hari'] = null;
+                $result['jam_per_minggu'] = null;
+                
+                if (preg_match('/(\d+)\s*(?:\([a-z]+\)\s*)?jam.*minggu/', $text, $matches)) {
+                    $result['jam_per_minggu'] = (int)$matches[1];
+                } elseif (preg_match('/(\d+)\s*(?:\([a-z]+\)\s*)?jam.*hari/', $text, $matches)) {
                     $result['jam_per_hari'] = (int)$matches[1];
-                } else {
-                    $result['jam_per_hari'] = null;
+                } elseif (preg_match('/(\d+)\s*(?:\([a-z]+\)\s*)?jam/', $text, $matches)) {
+                    $result['jam_per_hari'] = (int)$matches[1];
                 }
                 break;
                 

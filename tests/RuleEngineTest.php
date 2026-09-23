@@ -28,7 +28,8 @@ class RuleEngineTest extends TestCase {
         $this->assertEquals(['durasi_bulan' => null], $extractor->extract('durasi_pkwt', 'Berlaku sampai proyek selesai.'));
         
         // Lembur
-        $this->assertEquals(['jam_per_hari' => 4], $extractor->extract('lembur', 'Waktu lembur maksimal 4 jam sehari.'));
+        $this->assertEquals(['jam_per_hari' => 4, 'jam_per_minggu' => null], $extractor->extract('lembur', 'Waktu lembur maksimal 4 jam sehari.'));
+        $this->assertEquals(['jam_per_hari' => null, 'jam_per_minggu' => 20], $extractor->extract('lembur', 'Waktu lembur maksimal 20 jam seminggu.'));
         
         // Upah
         $this->assertEquals(['nominal' => 3000000], $extractor->extract('upah', 'Upah sebesar Rp 3.000.000 per bulan.'));
@@ -70,10 +71,14 @@ class RuleEngineTest extends TestCase {
     public function testLemburRule() {
         $rule = new LemburRule();
         
-        $violation = $rule->evaluate(['category' => 'lembur', 'extracted_values' => ['jam_per_hari' => 4]], 'PKWTT');
+        $violation = $rule->evaluate(['category' => 'lembur', 'extracted_values' => ['jam_per_hari' => 5]], 'PKWTT');
         $this->assertInstanceOf(Violation::class, $violation);
         
-        $this->assertNull($rule->evaluate(['category' => 'lembur', 'extracted_values' => ['jam_per_hari' => 3]], 'PKWTT'));
+        $violationMinggu = $rule->evaluate(['category' => 'lembur', 'extracted_values' => ['jam_per_minggu' => 20]], 'PKWTT');
+        $this->assertInstanceOf(Violation::class, $violationMinggu);
+        
+        $this->assertNull($rule->evaluate(['category' => 'lembur', 'extracted_values' => ['jam_per_hari' => 4]], 'PKWTT'));
+        $this->assertNull($rule->evaluate(['category' => 'lembur', 'extracted_values' => ['jam_per_minggu' => 18]], 'PKWTT'));
     }
     
     public function testUpahMinimumRule() {
@@ -108,7 +113,7 @@ class RuleEngineTest extends TestCase {
         $runner = new RuleEngineRunner();
         $clauses = [
             ['category' => 'upah', 'raw_text' => 'Gaji sebesar Rp 1.500.000'],
-            ['category' => 'lembur', 'raw_text' => 'Lembur 4 jam'],
+            ['category' => 'lembur', 'raw_text' => 'Lembur 5 jam'],
         ];
         
         $violations = $runner->run($clauses, 'PKWTT');
