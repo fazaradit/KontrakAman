@@ -17,6 +17,9 @@ $request = new Request();
 
 // Register routes
 $router->get('/', [\App\Controllers\HomeController::class, 'index']);
+$router->post('/api/contracts/upload', [\App\Controllers\ContractUploadController::class, 'handle']);
+$router->post('/api/contracts/{id}/analyze', [\App\Controllers\AnalysisController::class, 'analyze']);
+$router->post('/api/agent/analyze-contract', [\App\Services\HermesGateway\AgentToolEndpoint::class, 'handle']);
 
 // Dispatch
 $router->dispatch($request->getMethod(), $request->getUri());

@@ -124,7 +124,31 @@ CREATE TABLE analysis_results (
 4. **Cek credential sebelum commit:** pastikan tidak ada API key/secret hardcode di kode (harus lewat `.env`).
 5. **Keterbatasan MVP yang harus ditandai eksplisit di kode**, bukan disembunyikan: nilai UMP/UMK hardcode satu daerah, OCR belum diimplementasikan, formula pesangon PHK di luar 2 kategori dasar (Pasal 40/43) perlu verifikasi manual.
 
-## 7. Alur Kerja End-to-End (referensi arsitektur)
+## 7. Skill Hermes (`hermes-skill/`)
+
+Format SKILL.md Hermes Agent **BUKAN bebas**, harus ikut standar resmi berikut (terverifikasi dari dokumentasi resmi NousResearch/hermes-agent) — JANGAN improvisasi struktur lain:
+
+```yaml
+---
+name: nama-skill
+description: Deskripsi singkat
+version: 1.0.0
+metadata:
+  hermes:
+    tags: [tag1, tag2]
+    category: kategori
+---
+```
+Diikuti section wajib: `## When to Use`, `## Procedure`, `## Pitfalls`, `## Verification`.
+
+**Skill Hermes adalah dokumen prosedural** (instruksi langkah demi langkah termasuk command yang dijalankan agent, misalnya `curl`) — BUKAN skema tool formal ala OpenAI function-calling.
+
+**Lokasi file:**
+- **Source of truth ada di repo:** `hermes-skill/cek-kontrak-kerja/SKILL.md` (di-commit ke git, jadi bagian dari codebase)
+- **Lokasi runtime di VPS:** `~/.hermes/skills/kontrakaman/cek-kontrak-kerja/SKILL.md` — file ini di-COPY (bukan pindah) ke situ saat proses deploy di jendela akses VPS (tanggal 16-20). Sebelum itu, skill hanya ada sebagai file di repo, belum aktif di instalasi Hermes manapun.
+- Isi skill memanggil endpoint `POST /api/agent/analyze-contract` (dari `AgentToolEndpoint`, Task 7) lewat `curl` di section Procedure — endpoint ini baru berfungsi penuh setelah Task 6 (LLM reasoning) dan Task 7 (endpoint integration) selesai diimplementasikan. Skill boleh disiapkan/ditulis kapan saja di repo, tapi baru bisa benar-benar dites end-to-end setelah kedua task itu selesai.
+
+## 8. Alur Kerja End-to-End (referensi arsitektur)
 
 ```
 Upload kontrak (PDF/DOCX)
