@@ -69,7 +69,7 @@ class IntegrationPipelineTest extends TestCase {
         $masaPercobaanPasals = [];
         foreach ($result['findings'] as $finding) {
             if ($finding['severity'] === 'high' && strpos($finding['legal_basis'], 'Pasal 58') !== false) {
-                $masaPercobaanPasals[] = $finding['pasal'];
+                $masaPercobaanPasals[] = $finding['clause_number'] ?? $finding['pasal'] ?? 'Unknown';
             }
         }
         $this->assertCount(2, $masaPercobaanPasals, "Harusnya ada 2 violation masa percobaan (Ayat 1 dan Ayat 2).");

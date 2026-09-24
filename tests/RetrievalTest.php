@@ -10,7 +10,7 @@ class RetrievalTest extends TestCase {
     public function testRegulationRepositoryWithMockData() {
         $pdo = \App\Config\Database::getConnection();
         
-        $pdo->exec("TRUNCATE TABLE regulation_chunks");
+        $pdo->exec("DELETE FROM regulation_chunks WHERE source_law = 'UU TEST'");
         
         $vector1 = array_fill(0, 768, 0);
         $vector1[0] = 1.0;
@@ -35,7 +35,7 @@ class RetrievalTest extends TestCase {
         $this->assertCount(1, $results2);
         $this->assertEquals('Pasal 2', $results2[0]['pasal']);
         
-        $pdo->exec("TRUNCATE TABLE regulation_chunks");
+        $pdo->exec("DELETE FROM regulation_chunks WHERE source_law = 'UU TEST'");
     }
     
     #[Group('integration')]

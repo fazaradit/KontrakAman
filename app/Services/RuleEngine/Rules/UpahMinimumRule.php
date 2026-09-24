@@ -11,7 +11,17 @@ class UpahMinimumRule implements RuleInterface {
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'upah') {
             $nominal = $clause['extracted_values']['nominal'] ?? null;
-            if ($nominal !== null && $nominal < self::UMP_REFERENCE) {
+            
+            if ($nominal === null) {
+                return new Violation(
+                    "Review Manual",
+                    "low",
+                    $clause['category'],
+                    "Nominal upah tidak terdeteksi secara otomatis, perlu direview manual."
+                );
+            }
+            
+            if ($nominal < self::UMP_REFERENCE) {
                 return new Violation(
                     "Pasal 88E UU 13/2003 (Cipta Kerja)",
                     "high",

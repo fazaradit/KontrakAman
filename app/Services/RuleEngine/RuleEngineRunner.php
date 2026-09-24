@@ -26,7 +26,10 @@ class RuleEngineRunner {
     }
 
     public function run(array $clauses, string $contractType): array {
-        $violations = [];
+        $results = [
+            'violations' => [],
+            'compliant_clause_ids' => []
+        ];
         $foundCuti = false;
         
         foreach ($clauses as $clause) {
@@ -44,14 +47,18 @@ class RuleEngineRunner {
                 $violation = $this->rules[$category]->evaluate($clause, $contractType);
                 if ($violation !== null) {
                     $violation->clauseId = $clause['id'] ?? null;
-                    $violations[] = $violation;
+                    $results['violations'][] = $violation;
+                } else {
+                    if (isset($clause['id'])) {
+                        $results['compliant_clause_ids'][] = $clause['id'];
+                    }
                 }
             }
         }
         
         // Cek cuti tahunan tidak ada
         if (!$foundCuti) {
-            $violations[] = new Violation(
+            $results['violations'][] = new Violation(
                 "Pasal 79 ayat (2) UU 13/2003",
                 "medium",
                 "cuti",
@@ -60,11 +67,11 @@ class RuleEngineRunner {
         }
         
         // Sort violations by severity (high > medium > low)
-        usort($violations, function(Violation $a, Violation $b) {
+        usort($results['violations'], function(Violation $a, Violation $b) {
             $order = ['high' => 3, 'medium' => 2, 'low' => 1];
             return $order[$b->severity] <=> $order[$a->severity];
         });
         
-        return $violations;
+        return $results;
     }
 }

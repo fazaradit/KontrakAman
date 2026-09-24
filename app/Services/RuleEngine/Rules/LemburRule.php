@@ -10,6 +10,15 @@ class LemburRule implements RuleInterface {
             $jamPerHari = $clause['extracted_values']['jam_per_hari'] ?? null;
             $jamPerMinggu = $clause['extracted_values']['jam_per_minggu'] ?? null;
             
+            if ($jamPerHari === null && $jamPerMinggu === null) {
+                return new Violation(
+                    "Review Manual",
+                    "low",
+                    $clause['category'],
+                    "Durasi lembur tidak terdeteksi secara otomatis, perlu direview manual."
+                );
+            }
+            
             if (($jamPerHari !== null && $jamPerHari > 4) || ($jamPerMinggu !== null && $jamPerMinggu > 18)) { 
                 return new Violation(
                     "Pasal 26 PP 35/2021",

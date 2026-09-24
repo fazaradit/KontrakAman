@@ -34,6 +34,7 @@ class RuleEngineTest extends TestCase {
         // Upah
         $this->assertEquals(['nominal' => 3000000], $extractor->extract('upah', 'Upah sebesar Rp 3.000.000 per bulan.'));
         $this->assertEquals(['nominal' => 5000000], $extractor->extract('upah', 'Gaji sebesar Rp5.000.000.'));
+        $this->assertEquals(['nominal' => 4000000], $extractor->extract('upah', 'Gaji sebesar Rp4.000.000 setiap bulannya.'));
         $this->assertEquals(['nominal' => 3000000], $extractor->extract('upah', 'Gaji 3 juta per bulan'));
         $this->assertEquals(['nominal' => 1500000], $extractor->extract('upah', 'Sebesar 1500 ribu'));
         
@@ -116,7 +117,8 @@ class RuleEngineTest extends TestCase {
             ['category' => 'lembur', 'raw_text' => 'Lembur 5 jam'],
         ];
         
-        $violations = $runner->run($clauses, 'PKWTT');
+        $results = $runner->run($clauses, 'PKWTT');
+        $violations = $results['violations'];
         
         $this->assertCount(3, $violations);
         

@@ -117,15 +117,18 @@ class AnalysisController {
         $hybridSearch = new HybridSearch();
         $orchestrator = new ReasoningOrchestrator(new GeminiClient(), new PromptBuilder(), new ResponseParser());
         
-        // Ambil hasil rule engine untuk semua klausul
-        $ruleViolations = $ruleEngine->run($allClauses, $contractType);
-        $processedCategories = [];
+        // Filter klausul yang memiliki kategori
+        $categorizedClauses = array_filter($allClauses, fn($c) => $c['category'] !== null);
+        
+        // Ambil hasil rule engine untuk klausul yang berkategori
+        $ruleEngineResults = $ruleEngine->run($categorizedClauses, $contractType);
+        $ruleViolations = $ruleEngineResults['violations'];
+        $compliantClauseIds = $ruleEngineResults['compliant_clause_ids'];
         
         $analysisResults = [];
         
         // Rule Engine violations (deterministik)
         foreach ($ruleViolations as $violation) {
-            $processedCategories[] = $violation->category;
             
             // Find clause number from clauseId or fallback to category
             $clauseNumStr = "Umum / Tidak ditemukan klausul";
@@ -146,13 +149,27 @@ class AnalysisController {
                         break;
                     }
                 }
+                
+                if (!$clauseIdFound) {
+                    // Create a dummy clause so the violation isn't orphaned
+                    $stmtDummy = $pdo->prepare("INSERT INTO contract_clauses (contract_id, clause_number, raw_text, category, position_order) VALUES (?, ?, ?, ?, ?) RETURNING id");
+                    $stmtDummy->execute([
+                        $contractId,
+                        "Umum / Tidak ditemukan klausul",
+                        "Klausul tentang " . $violation->category . " tidak ditemukan dalam dokumen kontrak.",
+                        $violation->category,
+                        999
+                    ]);
+                    $clauseIdFound = $stmtDummy->fetch()['id'];
+                    $clauseNumStr = "Umum / Tidak ditemukan klausul";
+                }
             }
             
             // Insert into analysis_results
             $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, verdict, severity, source, explanation) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([
                 $clauseIdFound, // Use found clause_id instead of null
-                'violation',
+                $violation->verdict,
                 $violation->severity,
                 'rule_engine',
                 $violation->message
@@ -161,7 +178,7 @@ class AnalysisController {
             $analysisResults[] = [
                 'clause_id' => $clauseIdFound,
                 'clause_number' => $clauseNumStr,
-                'verdict' => 'violation',
+                'verdict' => $violation->verdict,
                 'severity' => $violation->severity,
                 'category' => $violation->category,
                 'explanation' => $violation->message,
@@ -170,9 +187,47 @@ class AnalysisController {
             ];
         }
         
-        // Untuk klausul ambigu / belum diproses RuleEngine tapi punya kategori
-        foreach ($allClauses as $clause) {
-            if ($clause['category'] !== null && !in_array($clause['category'], $processedCategories)) {
+        // Insert and track compliant clauses from Rule Engine
+        foreach ($compliantClauseIds as $compliantId) {
+            // Find clause
+            $clauseNumStr = "";
+            $category = "";
+            foreach ($allClauses as $c) {
+                if ($c['id'] === $compliantId) {
+                    $clauseNumStr = $c['clause_number'];
+                    $category = $c['category'];
+                    break;
+                }
+            }
+            
+            $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, verdict, severity, source, explanation) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $compliantId,
+                'compliant',
+                null,
+                'rule_engine',
+                'Sesuai dengan ketentuan peraturan perundang-undangan.'
+            ]);
+            
+            $analysisResults[] = [
+                'clause_id' => $compliantId,
+                'clause_number' => $clauseNumStr,
+                'verdict' => 'compliant',
+                'severity' => null,
+                'category' => $category,
+                'explanation' => 'Sesuai dengan ketentuan peraturan perundang-undangan.',
+                'source' => 'rule_engine',
+                'legal_basis' => 'Sesuai UU/PP'
+            ];
+        }
+        
+        // Untuk klausul yang punya kategori TETAPI tidak ada rule sama sekali untuk kategori tersebut
+        // (Di MVP, semua 6 kategori punya rule deterministik, jadi bagian ini sebenarnya tidak akan
+        // terpanggil kecuali ada penambahan kategori baru di ClauseCategorizer tanpa membuat rule di RuleEngine)
+        $supportedCategories = ['masa_percobaan', 'durasi_pkwt', 'lembur', 'upah', 'cuti', 'pesangon'];
+        
+        foreach ($categorizedClauses as $clause) {
+            if (!in_array($clause['category'], $supportedCategories)) {
                 try {
                     $retrieved = $hybridSearch->retrieve($clause);
                     if (count($retrieved) > 0) {

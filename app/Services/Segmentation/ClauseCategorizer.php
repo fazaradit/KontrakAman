@@ -18,7 +18,14 @@ class ClauseCategorizer {
         foreach ($categories as $category => $keywords) {
             foreach ($keywords as $keyword) {
                 if (str_contains($text, strtolower($keyword))) {
-                    return $category;
+                    if ($category === 'durasi_pkwt') {
+                        // Harus ada angka diikuti bulan/tahun dalam kalimat
+                        if (preg_match('/\d+\s*(?:\([a-z\s]+\)\s*)?(tahun|bulan)/', $text)) {
+                            return $category;
+                        }
+                    } else {
+                        return $category;
+                    }
                 }
             }
         }
