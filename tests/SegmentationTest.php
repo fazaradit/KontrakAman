@@ -30,6 +30,12 @@ class SegmentationTest extends TestCase {
         $this->assertEquals("Pihak kedua harus menda patkan haknya.", $normalized2);
     }
     
+    public function testTextNormalizerHandlesUnicodeLigatures() {
+        $raw = "kon\u{FB01}rmasi dan bersi\u{FB00}at";
+        $normalized = $this->normalizer->normalize($raw);
+        $this->assertEquals("konfirmasi dan bersiffat", $normalized);
+    }
+    
     public function testClauseSegmenterExtractsCorrectNumberOfPasal() {
         $files = [
             'fixture_1_format_standar.txt' => 3,
