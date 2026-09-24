@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     git \
     unzip \
+    poppler-utils \
     && docker-php-ext-install pdo pdo_pgsql \
     && a2enmod rewrite
 
