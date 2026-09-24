@@ -42,7 +42,11 @@
                 <span class="inline-block border-2 border-ink px-4 py-1 text-sm font-bold uppercase tracking-wider text-ink">
                     Jenis: <?= htmlspecialchars($contract['contract_type']) ?>
                 </span>
-                <p class="text-xs text-slateUI mt-2 font-medium">Dianalisis: <?= date('d M Y H:i', strtotime($contract['uploaded_at'])) ?></p>
+                <?php
+                    $date = new DateTime($contract['uploaded_at'], new DateTimeZone('UTC'));
+                    $date->setTimezone(new DateTimeZone('Asia/Jakarta'));
+                ?>
+                <p class="text-xs text-slateUI mt-2 font-medium">Dianalisis: <?= $date->format('d M Y H:i') ?> WIB</p>
             </div>
         </div>
 
