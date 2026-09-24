@@ -5,6 +5,10 @@ use App\Services\RuleEngine\RuleInterface;
 use App\Services\RuleEngine\Violation;
 
 class MasaPercobaanRule implements RuleInterface {
+    public function getLegalBasis(string $contractType): string {
+        return $contractType === 'PKWT' ? "Pasal 58 UU 13/2003" : "Pasal 60 UU 13/2003";
+    }
+
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'masa_percobaan') {
             if ($contractType === 'UNKNOWN') {
@@ -18,7 +22,7 @@ class MasaPercobaanRule implements RuleInterface {
                 );
             } elseif ($contractType === 'PKWT') {
                 return new Violation(
-                    "Pasal 58 UU 13/2003",
+                    $this->getLegalBasis($contractType),
                     "high",
                     $clause['category'],
                     "PKWT tidak boleh memiliki masa percobaan, klausul batal demi hukum."
@@ -34,7 +38,7 @@ class MasaPercobaanRule implements RuleInterface {
                     );
                 } elseif ($durasiBulan > 3) {
                     return new Violation(
-                        "Pasal 60 UU 13/2003",
+                        $this->getLegalBasis($contractType),
                         "medium",
                         $clause['category'],
                         "Masa percobaan untuk PKWTT maksimal 3 bulan."

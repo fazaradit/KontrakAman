@@ -5,6 +5,10 @@ use App\Services\RuleEngine\RuleInterface;
 use App\Services\RuleEngine\Violation;
 
 class PesangonRule implements RuleInterface {
+    public function getLegalBasis(string $contractType): string {
+        return "Pasal 40 ayat (2) PP 35/2021"; // Or "PP 35/2021" as it was
+    }
+
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'pesangon') {
             if ($contractType === 'UNKNOWN') {
@@ -27,7 +31,7 @@ class PesangonRule implements RuleInterface {
                     );
                 } else {
                     return new Violation(
-                        "PP 35/2021",
+                        $this->getLegalBasis($contractType),
                         "low",
                         $clause['category'],
                         "Perlu verifikasi manual terhadap tabel pesangon PP 35/2021."

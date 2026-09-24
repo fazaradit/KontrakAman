@@ -5,6 +5,10 @@ use App\Services\RuleEngine\RuleInterface;
 use App\Services\RuleEngine\Violation;
 
 class CutiTahunanRule implements RuleInterface {
+    public function getLegalBasis(string $contractType): string {
+        return "Pasal 79 ayat (2) UU 13/2003";
+    }
+
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'cuti') {
             $hariPerTahun = $clause['extracted_values']['hari_per_tahun'] ?? null;
@@ -20,7 +24,7 @@ class CutiTahunanRule implements RuleInterface {
             
             if ($hariPerTahun < 12) {
                 return new Violation(
-                    "Pasal 79 ayat (2) UU 13/2003",
+                    $this->getLegalBasis($contractType),
                     "medium",
                     $clause['category'],
                     "Cuti tahunan minimal 12 hari kerja setelah bekerja 12 bulan terus menerus."

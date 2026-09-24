@@ -4,64 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Analisis Kontrak - KontrakAman</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        document: '#FAFAF7',
+                        ink: '#1A1A1A',
+                        slateUI: '#374151',
+                        'ink-red': '#B91C1C',
+                        'ink-green': '#166534',
+                        'ink-amber': '#92400E'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-12">
-    <div class="max-w-4xl mx-auto px-4 py-8">
+<body class="bg-document text-ink font-sans antialiased min-h-screen pb-12">
+    <div class="max-w-4xl mx-auto px-4 py-10">
         
         <!-- Header -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-900 mb-1">Hasil Analisis Kontrak</h1>
-                    <p class="text-sm text-slate-500">File: <span class="font-semibold text-slate-700"><?= htmlspecialchars($contract['filename']) ?></span></p>
-                </div>
-                <div class="mt-4 md:mt-0 text-left md:text-right">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        Jenis: <?= htmlspecialchars($contract['contract_type']) ?>
-                    </span>
-                    <p class="text-xs text-slate-400 mt-2">Dianalisis pada: <?= date('d M Y H:i', strtotime($contract['uploaded_at'])) ?></p>
-                </div>
+        <div class="border-b-4 border-ink pb-6 mb-8 flex flex-col md:flex-row md:items-end justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-ink uppercase tracking-tight mb-2">KontrakAman</h1>
+                <p class="text-sm font-medium text-slateUI">Dokumen: <span class="text-ink font-bold"><?= htmlspecialchars($contract['filename']) ?></span></p>
             </div>
-            
-            <?php
-                $violationsCount = count(array_filter($findings, fn($f) => $f['verdict'] === 'violation'));
-                $ambiguousCount = count(array_filter($findings, fn($f) => $f['verdict'] === 'ambiguous'));
-                $totalIssues = $violationsCount + $ambiguousCount;
-            ?>
-            <div class="bg-slate-50 rounded-lg p-4 border border-slate-100 text-center">
-                <p class="text-lg font-medium <?= $totalIssues > 0 ? 'text-rose-600' : 'text-emerald-600' ?>">
-                    Ditemukan <?= $totalIssues ?> dari <?= $totalClauses ?> klausul berpotensi bermasalah atau melanggar aturan.
-                </p>
+            <div class="mt-4 md:mt-0 md:text-right">
+                <span class="inline-block border-2 border-ink px-4 py-1 text-sm font-bold uppercase tracking-wider text-ink">
+                    Jenis: <?= htmlspecialchars($contract['contract_type']) ?>
+                </span>
+                <p class="text-xs text-slateUI mt-2 font-medium">Dianalisis: <?= date('d M Y H:i', strtotime($contract['uploaded_at'])) ?></p>
             </div>
         </div>
 
+        <?php
+            $violationsCount = count(array_filter($findings, fn($f) => $f['verdict'] === 'violation'));
+            $ambiguousCount = count(array_filter($findings, fn($f) => $f['verdict'] === 'ambiguous'));
+            $totalIssues = $violationsCount + $ambiguousCount;
+        ?>
+
+        <!-- Warnings -->
         <?php if ($contract['contract_type'] === 'UNKNOWN'): ?>
-        <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6 rounded-r-lg">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-amber-800">
-                        <strong>⚠️ Jenis kontrak (PKWT/PKWTT) tidak terdeteksi otomatis dari dokumen ini.</strong> Beberapa pengecekan mungkin memerlukan verifikasi manual tambahan.
-                    </p>
-                </div>
-            </div>
+        <div class="border-2 border-ink-amber bg-amber-50 p-4 mb-6 font-sans">
+            <p class="text-sm text-ink-amber font-medium">
+                <span class="font-bold uppercase tracking-wider">/!\ Peringatan:</span> Jenis kontrak (PKWT/PKWTT) tidak terdeteksi otomatis dari dokumen ini. Beberapa pengecekan mungkin memerlukan verifikasi manual tambahan.
+            </p>
         </div>
         <?php endif; ?>
 
+        <div class="border-2 border-ink p-4 mb-10 font-sans text-center bg-white">
+            <p class="text-lg font-bold uppercase tracking-wide <?= $totalIssues > 0 ? 'text-ink-red' : 'text-ink-green' ?>">
+                Ditemukan <?= $totalIssues ?> dari <?= $totalClauses ?> klausul berpotensi bermasalah
+            </p>
+        </div>
+
+        <h2 class="text-xl font-bold font-sans uppercase tracking-wider text-ink mb-8 border-b-2 border-ink pb-2">Kutipan Evaluasi Dokumen</h2>
+
         <!-- Findings List -->
-        <div class="space-y-4">
+        <div class="space-y-12">
             <?php if (empty($findings)): ?>
-                <div class="bg-white rounded-xl shadow-sm border border-emerald-200 p-8 text-center">
-                    <svg class="mx-auto h-12 w-12 text-emerald-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 class="text-lg font-medium text-emerald-800">Tidak ada masalah ditemukan!</h3>
-                    <p class="text-sm text-emerald-600 mt-1">Berdasarkan <?= $totalClauses ?> klausul yang dievaluasi, semuanya terlihat sesuai dengan ketentuan.</p>
+                <div class="border-2 border-ink-green p-8 text-center bg-green-50">
+                    <h3 class="text-lg font-bold text-ink-green uppercase tracking-wider">Tidak ada masalah ditemukan!</h3>
+                    <p class="text-sm text-ink-green mt-2 font-medium">Berdasarkan <?= $totalClauses ?> klausul yang dievaluasi, semuanya terlihat sesuai dengan ketentuan.</p>
                 </div>
             <?php else: ?>
                 <?php foreach ($findings as $finding): 
@@ -70,69 +83,64 @@
                     
                     // Determine styling
                     if ($verdict === 'compliant') {
-                        $border = 'border-emerald-300';
-                        $bg = 'bg-emerald-50';
-                        $badge = 'bg-emerald-100 text-emerald-800';
-                        $icon = '<svg class="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
+                        $borderColor = 'border-ink-green';
+                        $textColor = 'text-ink-green';
+                        $label = 'SESUAI';
+                    } else if ($verdict === 'ambiguous') {
+                        $borderColor = 'border-ink-amber';
+                        $textColor = 'text-ink-amber';
+                        $label = 'AMBIGU / REVIEW';
                     } else {
-                        if ($severity === 'high') {
-                            $border = 'border-rose-300';
-                            $bg = 'bg-rose-50';
-                            $badge = 'bg-rose-100 text-rose-800';
-                            $icon = '<svg class="w-5 h-5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
-                        } elseif ($severity === 'medium') {
-                            $border = 'border-amber-300';
-                            $bg = 'bg-amber-50';
-                            $badge = 'bg-amber-100 text-amber-800';
-                            $icon = '<svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
-                        } else {
-                            $border = 'border-slate-300';
-                            $bg = 'bg-slate-50';
-                            $badge = 'bg-slate-200 text-slate-800';
-                            $icon = '<svg class="w-5 h-5 text-slate-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>';
-                        }
+                        $borderColor = 'border-ink-red';
+                        $textColor = 'text-ink-red';
+                        $label = 'PELANGGARAN';
                     }
                 ?>
-                <div class="rounded-xl border <?= $border ?> <?= $bg ?> shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-white/40 flex justify-between items-start">
-                        <div class="flex items-center space-x-2">
-                            <?= $icon ?>
-                            <h3 class="text-lg font-semibold text-slate-800"><?= htmlspecialchars($finding['clause_number']) ?></h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 relative border-t-2 border-slate-300 pt-8">
+                    <!-- Annotation Margin (Left side on desktop) -->
+                    <div class="md:col-span-4 font-sans flex flex-col space-y-4 relative">
+                        <div class="inline-block border-2 <?= $borderColor ?> <?= $textColor ?> px-3 py-1 text-sm font-bold uppercase w-max tracking-wider">
+                            <?= $label ?>
                         </div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $badge ?> uppercase tracking-wide">
-                            <?= $verdict === 'compliant' ? 'Sesuai' : htmlspecialchars($severity) ?>
-                        </span>
+                        
+                        <div>
+                            <p class="text-xs font-bold text-slateUI uppercase tracking-wider mb-1">Dasar Hukum</p>
+                            <p class="text-sm text-ink font-bold"><?= htmlspecialchars($finding['legal_basis'] ?? 'Tidak ada acuan') ?></p>
+                        </div>
+                        
+                        <div>
+                            <p class="text-xs font-bold text-slateUI uppercase tracking-wider mb-1">Catatan Legal</p>
+                            <p class="text-sm text-ink font-medium leading-relaxed"><?= htmlspecialchars($finding['explanation']) ?></p>
+                        </div>
                     </div>
                     
-                    <div class="px-6 py-4 bg-white/60">
-                        <div class="mb-3">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dasar Hukum</span>
-                            <p class="text-sm font-medium text-slate-800 mt-1"><?= htmlspecialchars($finding['legal_basis'] ?? 'Tidak ada acuan') ?></p>
+                    <!-- Clause Text (Right side on desktop) -->
+                    <div class="md:col-span-8">
+                        <div class="border-l-4 <?= $borderColor ?> pl-6">
+                            <p class="text-sm text-slateUI font-sans font-bold uppercase tracking-wider mb-3">(<?= htmlspecialchars($finding['clause_number']) ?>)</p>
+                            
+                            <?php if(!empty($finding['clause_text'])): ?>
+                            <div class="text-lg font-serif text-ink leading-relaxed italic">
+                                "<?= nl2br(htmlspecialchars($finding['clause_text'])) ?>"
+                            </div>
+                            <?php else: ?>
+                            <div class="text-lg font-serif text-slateUI leading-relaxed italic">
+                                Klausul tidak tertulis di dalam dokumen.
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        
-                        <div class="mb-3">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Penjelasan</span>
-                            <p class="text-sm text-slate-700 mt-1 leading-relaxed"><?= htmlspecialchars($finding['explanation']) ?></p>
-                        </div>
-                        
-                        <?php if(!empty($finding['clause_text'])): ?>
-                        <div class="mt-4 p-3 bg-slate-100 rounded text-xs text-slate-600 border border-slate-200">
-                            <span class="font-semibold block mb-1">Teks Asli Klausul:</span>
-                            <?= nl2br(htmlspecialchars($finding['clause_text'])) ?>
-                        </div>
-                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
         
-        <div class="mt-8 flex flex-col items-center">
-            <a href="/upload" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        <div class="mt-16 flex flex-col items-center border-t-2 border-ink pt-8">
+            <a href="/upload" class="inline-flex items-center justify-center px-6 py-3 border-2 border-ink text-sm font-bold uppercase tracking-wider text-document bg-ink hover:bg-slateUI transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ink">
                 Analisis Kontrak Lainnya
             </a>
-            <p class="mt-4 text-xs text-slate-400 text-center">
-                KontrakAman adalah alat bantu awal, bukan pengganti konsultasi hukum resmi.
+            <p class="mt-4 text-xs font-medium text-slateUI uppercase tracking-wider text-center">
+                Alat bantu awal &bull; Bukan pengganti legal opini resmi
             </p>
         </div>
     </div>

@@ -166,13 +166,14 @@ class AnalysisController {
             }
             
             // Insert into analysis_results
-            $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, verdict, severity, source, explanation) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, verdict, severity, source, explanation, legal_basis) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $clauseIdFound, // Use found clause_id instead of null
                 $violation->verdict,
                 $violation->severity,
                 'rule_engine',
-                $violation->message
+                $violation->message,
+                $violation->pasal
             ]);
             
             $analysisResults[] = [
@@ -188,7 +189,10 @@ class AnalysisController {
         }
         
         // Insert and track compliant clauses from Rule Engine
-        foreach ($compliantClauseIds as $compliantId) {
+        foreach ($compliantClauseIds as $compliantInfo) {
+            $compliantId = $compliantInfo['id'] ?? $compliantInfo; // Handle both array and old int format if any
+            $legalBasis = $compliantInfo['legal_basis'] ?? 'Sesuai UU/PP';
+
             // Find clause
             $clauseNumStr = "";
             $category = "";
@@ -200,13 +204,14 @@ class AnalysisController {
                 }
             }
             
-            $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, verdict, severity, source, explanation) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, verdict, severity, source, explanation, legal_basis) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $compliantId,
                 'compliant',
                 null,
                 'rule_engine',
-                'Sesuai dengan ketentuan peraturan perundang-undangan.'
+                'Sesuai dengan ketentuan peraturan perundang-undangan.',
+                $legalBasis
             ]);
             
             $analysisResults[] = [
@@ -217,7 +222,7 @@ class AnalysisController {
                 'category' => $category,
                 'explanation' => 'Sesuai dengan ketentuan peraturan perundang-undangan.',
                 'source' => 'rule_engine',
-                'legal_basis' => 'Sesuai UU/PP'
+                'legal_basis' => $legalBasis
             ];
         }
         
@@ -233,17 +238,6 @@ class AnalysisController {
                     if (count($retrieved) > 0) {
                         $llmResult = $orchestrator->process($clause, $retrieved);
                         
-                        $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, matched_regulation_ids, verdict, severity, source, explanation, confidence) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                        $stmt->execute([
-                            $clause['id'],
-                            '{' . implode(',', $llmResult['matched_regulation_ids'] ?? []) . '}',
-                            $llmResult['verdict'],
-                            $llmResult['severity'],
-                            $llmResult['source'],
-                            $llmResult['explanation'],
-                            $llmResult['confidence']
-                        ]);
-                        
                         // Parse cited pasal dari raw_response jika bisa, atau pass null
                         $cited = 'Review Manual';
                         if (!empty($llmResult['raw_response'])) {
@@ -252,6 +246,18 @@ class AnalysisController {
                                 $cited = $decoded['cited_pasal'] . ($decoded['cited_source_law'] ? ' ' . $decoded['cited_source_law'] : '');
                             }
                         }
+                        
+                        $stmt = $pdo->prepare("INSERT INTO analysis_results (clause_id, matched_regulation_ids, verdict, severity, source, explanation, confidence, legal_basis) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([
+                            $clause['id'],
+                            '{' . implode(',', $llmResult['matched_regulation_ids'] ?? []) . '}',
+                            $llmResult['verdict'],
+                            $llmResult['severity'],
+                            $llmResult['source'],
+                            $llmResult['explanation'],
+                            $llmResult['confidence'],
+                            $cited
+                        ]);
                         
                         $analysisResults[] = [
                             'clause_id' => $clause['id'],

@@ -5,6 +5,10 @@ use App\Services\RuleEngine\RuleInterface;
 use App\Services\RuleEngine\Violation;
 
 class DurasiPkwtRule implements RuleInterface {
+    public function getLegalBasis(string $contractType): string {
+        return "Pasal 8 PP 35/2021";
+    }
+
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'durasi_pkwt') {
             if ($contractType === 'UNKNOWN') {
@@ -21,7 +25,7 @@ class DurasiPkwtRule implements RuleInterface {
                 
                 if ($durasiBulan === null) {
                     return new Violation(
-                        "Pasal 8 PP 35/2021",
+                        $this->getLegalBasis($contractType),
                         "low",
                         $clause['category'],
                         "Perlu review manual, durasi tidak terdeteksi otomatis."
@@ -30,7 +34,7 @@ class DurasiPkwtRule implements RuleInterface {
                 
                 if ($durasiBulan > 60) {
                     return new Violation(
-                        "Pasal 8 PP 35/2021",
+                        $this->getLegalBasis($contractType),
                         "high",
                         $clause['category'],
                         "Durasi PKWT (termasuk perpanjangan) maksimal 5 tahun (60 bulan)."

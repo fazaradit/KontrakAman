@@ -6,7 +6,7 @@ class ClauseSegmenter {
     public function extractPasalBlocks(string $text): array {
         // Find all occurrences of "Pasal <number>" or variations
         // Using PREG_OFFSET_CAPTURE to get the start positions
-        $pattern = '/^Pasal\s+(\d+)/im';
+        $pattern = '/^\s*Pasal\s+(\d+)/im';
         
         if (!preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE)) {
             return [];

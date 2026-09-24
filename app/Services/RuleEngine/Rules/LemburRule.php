@@ -5,6 +5,10 @@ use App\Services\RuleEngine\RuleInterface;
 use App\Services\RuleEngine\Violation;
 
 class LemburRule implements RuleInterface {
+    public function getLegalBasis(string $contractType): string {
+        return "Pasal 26 PP 35/2021";
+    }
+
     public function evaluate(array $clause, string $contractType): ?Violation {
         if ($clause['category'] === 'lembur') {
             $jamPerHari = $clause['extracted_values']['jam_per_hari'] ?? null;
@@ -21,7 +25,7 @@ class LemburRule implements RuleInterface {
             
             if (($jamPerHari !== null && $jamPerHari > 4) || ($jamPerMinggu !== null && $jamPerMinggu > 18)) { 
                 return new Violation(
-                    "Pasal 26 PP 35/2021",
+                    $this->getLegalBasis($contractType),
                     "medium",
                     $clause['category'],
                     "Waktu lembur maksimal 4 jam/hari dan 18 jam/minggu menurut PP 35/2021."

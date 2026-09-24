@@ -50,7 +50,10 @@ class RuleEngineRunner {
                     $results['violations'][] = $violation;
                 } else {
                     if (isset($clause['id'])) {
-                        $results['compliant_clause_ids'][] = $clause['id'];
+                        $results['compliant_clause_ids'][] = [
+                            'id' => $clause['id'],
+                            'legal_basis' => $this->rules[$category]->getLegalBasis($contractType)
+                        ];
                     }
                 }
             }

@@ -4,9 +4,12 @@ namespace App\Services\Ingestion;
 
 class TextNormalizer {
     public function normalize(string $rawText): string {
+        // 0. Hapus karakter form feed (page break dari pdftotext)
+        $text = str_replace("\x0C", "", $rawText);
+        
         // 1. Gabungkan baris yang terpotong di tengah kalimat
         //    (regex: '/([a-z,])\n(?=[a-z])/u')
-        $text = preg_replace('/([a-z,])\n(?=[a-z])/u', '$1 ', $rawText);
+        $text = preg_replace('/([a-z,])\n(?=[a-z])/u', '$1 ', $text);
         
         // 2. Normalisasi whitespace ganda/tab/newline berlebih jadi spasi tunggal,
         //    tapi kita mau mempertahankan newline antar paragraf/pasal.
