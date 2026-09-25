@@ -33,43 +33,57 @@ class WebController {
             exit;
         }
         
-        $extractor = new PdfExtractor();
-        try {
-            $text = $extractor->extract($file['tmp_name']);
-        } catch (\Exception $e) {
-            header("Location: /upload?error=" . urlencode("Gagal membaca PDF: " . $e->getMessage()));
-            exit;
-        }
-        
-        if (trim($text) === '') {
-            header("Location: /upload?error=" . urlencode("Teks dokumen kosong setelah diekstrak."));
-            exit;
-        }
-        
-        $contractType = 'UNKNOWN';
-        $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
-        
-        if ($isPKWTT) {
-            $contractType = 'PKWTT';
-        } else {
-            $isPKWT = stripos($text, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
-            if ($isPKWT) {
-                $contractType = 'PKWT';
-            }
-        }
-        
+        $fileHash = hash_file('sha256', $file['tmp_name']);
         $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, contract_type, status) VALUES (?, ?, ?, 'processing') RETURNING id");
-        $stmt->execute([$file['name'], $text, $contractType]);
-        $contractId = $stmt->fetch()['id'];
         
-        // Jalankan pipeline analysis secara synchronous
-        $analysisController = new AnalysisController();
-        $result = $analysisController->runPipeline($contractId);
+        $stmt = $pdo->prepare("SELECT id FROM contracts WHERE file_hash = ? AND status = 'analyzed' LIMIT 1");
+        $stmt->execute([$fileHash]);
+        $existing = $stmt->fetch();
         
-        if (isset($result['error'])) {
-            header("Location: /upload?error=" . urlencode("Gagal menganalisis kontrak: " . $result['error']));
-            exit;
+        if ($existing) {
+            $contractId = $existing['id'];
+            $skipProcessing = true;
+        } else {
+            $extractor = new PdfExtractor();
+            try {
+                $text = $extractor->extract($file['tmp_name']);
+            } catch (\Exception $e) {
+                header("Location: /upload?error=" . urlencode("Gagal membaca PDF: " . $e->getMessage()));
+                exit;
+            }
+            
+            if (trim($text) === '') {
+                header("Location: /upload?error=" . urlencode("Teks dokumen kosong setelah diekstrak."));
+                exit;
+            }
+            
+            $contractType = 'UNKNOWN';
+            $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
+            
+            if ($isPKWTT) {
+                $contractType = 'PKWTT';
+            } else {
+                $isPKWT = stripos($text, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
+                if ($isPKWT) {
+                    $contractType = 'PKWT';
+                }
+            }
+            
+            $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, contract_type, status, file_hash) VALUES (?, ?, ?, 'processing', ?) RETURNING id");
+            $stmt->execute([$file['name'], $text, $contractType, $fileHash]);
+            $contractId = $stmt->fetch()['id'];
+            $skipProcessing = false;
+        }
+        
+        if (!$skipProcessing) {
+            // Jalankan pipeline analysis secara synchronous
+            $analysisController = new AnalysisController();
+            $result = $analysisController->runPipeline($contractId);
+            
+            if (isset($result['error'])) {
+                header("Location: /upload?error=" . urlencode("Gagal menganalisis kontrak: " . $result['error']));
+                exit;
+            }
         }
         
         header("Location: /report/" . $contractId);

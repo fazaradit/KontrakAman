@@ -28,36 +28,53 @@ class AgentToolEndpoint {
                     return $response->json(['error' => 'Ukuran file maksimal 5MB.'], 400);
                 }
                 
-                $extractor = new PdfExtractor();
-                $text = $extractor->extract($file['tmp_name']);
-                
-                if (trim($text) === '') {
-                    return $response->json(['error' => 'Teks dokumen kosong setelah diekstrak.'], 422);
-                }
-                
-                $contractType = 'UNKNOWN';
-                
-                $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
-                
-                if ($isPKWTT) {
-                    $contractType = 'PKWTT';
-                } else {
-                    $isPKWT = stripos($text, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
-                    if ($isPKWT) {
-                        $contractType = 'PKWT';
-                    }
-                }
-                
+                $fileHash = hash_file('sha256', $file['tmp_name']);
                 $pdo = Database::getConnection();
-                $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, contract_type, status) VALUES (?, ?, ?, 'processing') RETURNING id");
-                $stmt->execute([$file['name'], $text, $contractType]);
-                $contractId = $stmt->fetch()['id'];
+                
+                $stmt = $pdo->prepare("SELECT id FROM contracts WHERE file_hash = ? AND status = 'analyzed' LIMIT 1");
+                $stmt->execute([$fileHash]);
+                $existing = $stmt->fetch();
+                
+                if ($existing) {
+                    $contractId = $existing['id'];
+                    $skipProcessing = true;
+                } else {
+                    $extractor = new PdfExtractor();
+                    $text = $extractor->extract($file['tmp_name']);
+                    
+                    if (trim($text) === '') {
+                        return $response->json(['error' => 'Teks dokumen kosong setelah diekstrak.'], 422);
+                    }
+                    
+                    $contractType = 'UNKNOWN';
+                    
+                    $isPKWTT = stripos($text, 'waktu tidak tertentu') !== false || stripos($text, 'pkwtt') !== false;
+                    
+                    if ($isPKWTT) {
+                        $contractType = 'PKWTT';
+                    } else {
+                        $isPKWT = stripos($text, 'waktu tertentu') !== false || stripos($text, 'pkwt') !== false;
+                        if ($isPKWT) {
+                            $contractType = 'PKWT';
+                        }
+                    }
+                    
+                    $stmt = $pdo->prepare("INSERT INTO contracts (filename, raw_text, contract_type, status, file_hash) VALUES (?, ?, ?, 'processing', ?) RETURNING id");
+                    $stmt->execute([$file['name'], $text, $contractType, $fileHash]);
+                    $contractId = $stmt->fetch()['id'];
+                    $skipProcessing = false;
+                }
             } else {
                 return $response->json(['error' => 'Harap berikan contract_id atau upload file kontrak (PDF).'], 400);
             }
             
             $analysisController = new AnalysisController();
-            $result = $analysisController->runPipeline($contractId);
+            
+            if (isset($skipProcessing) && $skipProcessing) {
+                $result = $analysisController->getFormattedResults($contractId);
+            } else {
+                $result = $analysisController->runPipeline($contractId);
+            }
             
             if (isset($result['error'])) {
                 return $response->json(['error' => $result['error']], $result['status_code'] ?? 500);

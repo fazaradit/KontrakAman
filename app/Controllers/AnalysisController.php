@@ -293,4 +293,66 @@ class AnalysisController {
             'findings' => $analysisResults
         ];
     }
+    
+    public function getFormattedResults(int $contractId): array {
+        $pdo = Database::getConnection();
+        
+        $stmt = $pdo->prepare("SELECT contract_type FROM contracts WHERE id = ?");
+        $stmt->execute([$contractId]);
+        $contractType = $stmt->fetchColumn() ?: 'UNKNOWN';
+        
+        $stmt = $pdo->prepare("SELECT count(*) FROM contract_clauses WHERE contract_id = ? AND position_order != 999");
+        $stmt->execute([$contractId]);
+        $totalClauses = (int)$stmt->fetchColumn();
+        
+        $stmt = $pdo->prepare("
+            SELECT ar.*, cc.clause_number, cc.category
+            FROM analysis_results ar
+            LEFT JOIN contract_clauses cc ON ar.clause_id = cc.id
+            WHERE cc.contract_id = ? OR cc.contract_id IS NULL
+        ");
+        $stmt->execute([$contractId]);
+        $results = $stmt->fetchAll();
+        
+        // Note: For dummy clauses (contract_id is set to the real contract_id but maybe cc.contract_id isn't checked properly if cc is null? 
+        // Actually dummy clauses DO have contract_id set properly.)
+        // Let's refine the query:
+        $stmt = $pdo->prepare("
+            SELECT ar.*, cc.clause_number, cc.category
+            FROM analysis_results ar
+            JOIN contract_clauses cc ON ar.clause_id = cc.id
+            WHERE cc.contract_id = ?
+        ");
+        $stmt->execute([$contractId]);
+        $results = $stmt->fetchAll();
+        
+        $analysisResults = [];
+        foreach ($results as $row) {
+            $analysisResults[] = [
+                'clause_id' => $row['clause_id'],
+                'clause_number' => $row['clause_number'],
+                'verdict' => $row['verdict'],
+                'severity' => $row['severity'],
+                'category' => $row['category'],
+                'explanation' => $row['explanation'],
+                'source' => $row['source'],
+                'legal_basis' => $row['legal_basis']
+            ];
+        }
+        
+        usort($analysisResults, function($a, $b) {
+            $order = ['high' => 3, 'medium' => 2, 'low' => 1];
+            $aSev = $order[$a['severity'] ?? 'low'] ?? 0;
+            $bSev = $order[$b['severity'] ?? 'low'] ?? 0;
+            return $bSev <=> $aSev;
+        });
+        
+        return [
+            'contract_id' => $contractId,
+            'contract_type' => $contractType,
+            'total_clauses_checked' => $totalClauses,
+            'violations_found' => count(array_filter($analysisResults, fn($r) => $r['verdict'] === 'violation')),
+            'findings' => $analysisResults
+        ];
+    }
 }
